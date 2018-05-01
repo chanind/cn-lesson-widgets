@@ -1,0 +1,7 @@
+.WordPart {
+  cursor: pointer;
+  padding: 5px 15px;
+  border-radius: 3px;
+  background: white;
+  user-select: none;
+}
