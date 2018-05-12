@@ -1,30 +1,22 @@
 /* @flow */
 
 import React, { Component } from 'react';
-import Measure from 'react-measure';
+import MeasurableDiv from './MeasurableDiv';
+import type { onUpdateBounds } from './MeasurableDiv';
 import './WordPart.css'
-
-type dimensions = {
-  width: number,
-  height: number,
-};
 
 type Props = {
   text: string,
-  onUpdateBounds: (dimensions) => void
+  onUpdateBounds: onUpdateBounds,
 };
 
 
 class WordPart extends Component<Props> {
   render() {
     return (
-      <Measure bounds onResize={(contentRect) => this.props.onUpdateBounds(contentRect.bounds)}>
-        {({ measureRef }) => (
-          <div ref={measureRef} className="WordPart">
-            {this.props.text}
-          </div>
-        )}
-      </Measure>
+      <MeasurableDiv onUpdateBounds={this.props.onUpdateBounds} className="WordPart">
+        {this.props.text}
+      </MeasurableDiv>
     );
   }
 }

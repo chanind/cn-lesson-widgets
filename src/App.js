@@ -13,7 +13,7 @@ class App extends Component<null> {
             config={{
               prompt: 'How are you?',
               correctAnswers: ['你好吗？'],
-              scrambledParts: ['你','好','吗','？', '他', '我'],
+              scrambledParts: ['你', '好', '吗', '？', '他', '我'],
             }}
             onCorrect={() => alert('Correct! :D')}
             onMistake={() => alert('Wrong. :X')}
