@@ -2,7 +2,6 @@
 
 import React, { Component } from 'react';
 import type { Node } from 'react';
-import Measure from 'react-measure';
 
 export type positionDelta = {
   xDelta: number,

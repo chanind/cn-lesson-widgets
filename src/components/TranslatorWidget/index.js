@@ -104,7 +104,6 @@ class TranslatorWidget extends Component<Props, State> {
   onEndDragWord = (posDelta: positionDelta) => {
     const { chosenItemsBounds, draggingItem } = this.state;
     if (draggingItem == null || !chosenItemsBounds) return;
-    const droppedOnChosenItem = null;
     let isDroppedOnChosenArea = false;
     const newChosenItems = removeArrayItem(this.state.chosenItems, draggingItem);
     for (let i = 0; i < this.state.chosenItems.length - 1; i++) {
