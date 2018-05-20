@@ -1,0 +1,68 @@
+.WordOrderWidget {
+  height: 100%;
+  background: #EEE;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.WordOrderWidget-response {
+  position: relative;
+  flex-grow: 1
+}
+
+.WordOrderWidget-container {
+  padding-top: 10px;
+  border-bottom: 1px solid #999;
+}
+
+.WordOrderWidget-wordPart {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: all 300ms;
+  z-index: 99;
+}
+
+.WordOrderWidget-wordPart.is-dragging {
+  transition: box-shadow 300ms, top 150ms, left 150ms;
+  top: -3px;
+  left: -3px;
+  z-index: 100;
+  box-shadow: 3px 3px 15px rgba(0,0,0,0.15);
+}
+
+
+.WordOrderWidget-line {
+  height: 50px;
+  border-bottom: 1px solid #CCC;
+  margin: 0 10px;
+}
+
+.WordOrderWidget-checkResponse {
+  padding: 10px;
+}
+
+.WordOrderWidget-checkResponseButton {
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  font-size: 20px;
+  color: white;
+  border-radius: 5px;
+  display: block;
+  background: #61ce02;
+  transition: all 300ms;
+}
+
+.WordOrderWidget-checkResponseButton:hover {
+  background: #6ae500;
+}
+
+.WordOrderWidget-checkResponseButton:disabled {
+  cursor: no-drop;
+  color: #DDD;
+  background: #61ce02;
+}

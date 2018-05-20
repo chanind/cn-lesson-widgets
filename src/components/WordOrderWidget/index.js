@@ -17,7 +17,6 @@ type position = {
 
 type Props = {
   config: {
-    prompt: string,
     correctAnswers: string[],
     scrambledParts: string[],
   },
@@ -26,12 +25,12 @@ type Props = {
 };
 
 type State = {
-  wordBankPositions: number[],
-  chosenItems: number[],
-  chosenItemsBounds: ?bounds,
+  wordPartPositions: number[],
+  containerBounds: ?bounds,
   draggingItem: ?number,
   draggingItemPosDelta: ?positionDelta,
   wordPartBounds: { [number]: bounds },
+  scrambledParts: ?string[],
 };
 
 const updateWordPartBounds = (itemPos, bounds) => (
@@ -47,39 +46,26 @@ const WORD_PART_SPACING = 10;
 const LINE_HEIGHT = 50;
 
 
-class TranslatorWidget extends Component<Props, State> {
+class WordOrderWidget extends Component<Props, State> {
 
   state = {
-    chosenItems: [],
-    wordBankPositions: [],
+    wordPartPositions: [],
+    containerBounds: null,
     wordPartBounds: {},
-    chosenItemsBounds: null,
     draggingItem: null,
     draggingItemPosDelta: null,
+    scrambledParts: null,
   };
 
   static getDerivedStateFromProps(nextProps: Props, prevState: State) {
-    if (prevState.wordBankPositions.length !== nextProps.config.scrambledParts.length) {
-      const wordBankPositions = shuffleArray(nextProps.config.scrambledParts.map((item, index) => index));
+    if (prevState.scrambledParts !== nextProps.config.scrambledParts) {
+      const wordPartPositions = shuffleArray(nextProps.config.scrambledParts.map((item, index) => index));
       return {
-        chosenItems: [],
-        wordBankPositions,
+        wordPartPositions,
         wordPartBounds: {},
+        scrambledParts: nextProps.config.scrambledParts,
       };
     }
-  }
-
-  onClickWordPart = (itemPos: number) => {
-    const chosenItemsCopy = this.state.chosenItems.slice(0);
-    if (this.isChosen(itemPos)) {
-      const chosenIndex = this.state.chosenItems.indexOf(itemPos);
-      chosenItemsCopy.splice(chosenIndex, 1);
-    } else {
-      // add to the end of the list
-      chosenItemsCopy.push(itemPos);
-
-    }
-    this.setState({chosenItems: chosenItemsCopy});
   }
 
   onCheckResponse = () => {
@@ -102,13 +88,13 @@ class TranslatorWidget extends Component<Props, State> {
   }
 
   onEndDragWord = (posDelta: positionDelta) => {
-    const { chosenItemsBounds, draggingItem } = this.state;
-    if (draggingItem == null || !chosenItemsBounds) return;
+    const { containerBounds, draggingItem } = this.state;
+    if (draggingItem == null || !containerBounds) return;
     let isDroppedOnChosenArea = false;
-    const newChosenItems = removeArrayItem(this.state.chosenItems, draggingItem);
-    for (let i = 0; i < this.state.chosenItems.length - 1; i++) {
-      if (this.isDraggedItemOnChosenItemNum(i)) {
-        newChosenItems.splice(i, 0, draggingItem);
+    const newWordPartPositions = removeArrayItem(this.state.wordPartPositions, draggingItem);
+    for (let i = 0; i < this.state.wordPartPositions.length - 1; i++) {
+      if (this.isDraggedItemOnItemNum(i)) {
+        newWordPartPositions.splice(i, 0, draggingItem);
         isDroppedOnChosenArea = true;
         break;
       }
@@ -117,45 +103,29 @@ class TranslatorWidget extends Component<Props, State> {
       const draggedItemCenter = this.getDraggedItemCenter();
       if (
         draggedItemCenter.x > 0 &&
-        draggedItemCenter.x < chosenItemsBounds.width &&
+        draggedItemCenter.x < containerBounds.width &&
         draggedItemCenter.y > 0 &&
-        draggedItemCenter.y < chosenItemsBounds.height
+        draggedItemCenter.y < containerBounds.height
       ) {
-        newChosenItems.push(draggingItem);
+        newWordPartPositions.push(draggingItem);
       }
     }
     this.setState({
       draggingItem: null,
       draggingItemPosDelta: null,
-      chosenItems: newChosenItems,
+      wordPartPositions: newWordPartPositions,
     });
   }
 
-  isChosen(itemPos: number) {
-    return this.state.chosenItems.indexOf(itemPos) >= 0;
-  }
-
-  getWordBankItems() {
-    return this.state.wordBankPositions.filter(item => !this.isChosen(item));
-  }
-
   getPreviousItems(itemPos: number, ignorePhantomItem: boolean = false) {
-    let items;
-    const isItemChosen = this.isChosen(itemPos);
-
-    if (isItemChosen) {
-      items = this.state.chosenItems.slice(0, this.state.chosenItems.indexOf(itemPos));
-    } else {
-      const wordBankItems = this.getWordBankItems();
-      items = wordBankItems.slice(0, wordBankItems.indexOf(itemPos));
-    }
+    let items = this.state.wordPartPositions.slice(0, this.state.wordPartPositions.indexOf(itemPos));
     const draggingItem = this.state.draggingItem;
     if (draggingItem != null) {
       items = removeArrayItem(items, draggingItem);
 
-      if (isItemChosen && draggingItem !== itemPos && !ignorePhantomItem) {
+      if (draggingItem !== itemPos && !ignorePhantomItem) {
         for (let i = 0; i < items.length + 1; i++) {
-          if (this.isDraggedItemOnChosenItemNum(i)) {
+          if (this.isDraggedItemOnItemNum(i)) {
             items.splice(i, 0, draggingItem);
             break;
           }
@@ -165,11 +135,10 @@ class TranslatorWidget extends Component<Props, State> {
     return items;
   }
 
-  isDraggedItemOnChosenItemNum(chosenItemNum: number) {
-    console.log(`is dragged on ${chosenItemNum}?`);
+  isDraggedItemOnItemNum(chosenItemNum: number) {
     const draggingItem = this.state.draggingItem;
     if (draggingItem == null) return false;
-    const chosenItemAtPos = removeArrayItem(this.state.chosenItems, draggingItem)[chosenItemNum];
+    const chosenItemAtPos = removeArrayItem(this.state.wordPartPositions, draggingItem)[chosenItemNum];
     const chosenItemPos = this.getItemPos(chosenItemAtPos, true);
 
     const draggedItemBounds = this.state.wordPartBounds[draggingItem];
@@ -194,7 +163,7 @@ class TranslatorWidget extends Component<Props, State> {
   }
 
   boundsHaveLoaded() {
-    if (!this.state.chosenItemsBounds) return false;
+    if (!this.state.containerBounds) return false;
     for (let i = 0; i < this.props.config.scrambledParts.length; i++) {
       if (!this.state.wordPartBounds[i]) return false;
     }
@@ -202,15 +171,16 @@ class TranslatorWidget extends Component<Props, State> {
   }
 
   getChosenText() {
-    return this.state.chosenItems.map(item => this.props.config.scrambledParts[item]).join('');
+    const scrambledParts = this.state.scrambledParts || [];
+    return this.state.wordPartPositions.map(item => scrambledParts[item]).join('');
   }
 
   getItemPos(itemPos: number, ignorePhantomItem: boolean = false) {
     if (!this.boundsHaveLoaded()) return {x: 0, y: 0};
 
     // this check is just for flow, otherwise it's always going to be set due to the check above.
-    const chosenItemsHeight = (this.state.chosenItemsBounds && this.state.chosenItemsBounds.height) || 0;
-    const chosenItemsWidth = (this.state.chosenItemsBounds && this.state.chosenItemsBounds.width) || 0;
+    const wordPartPositionsHeight = (this.state.containerBounds && this.state.containerBounds.height) || 0;
+    const wordPartPositionsWidth = (this.state.containerBounds && this.state.containerBounds.width) || 0;
 
     const previousItems = this.getPreviousItems(itemPos, ignorePhantomItem);
     let row = 0;
@@ -218,7 +188,7 @@ class TranslatorWidget extends Component<Props, State> {
     previousItems.forEach(prevItemPos => {
       const bounds = this.state.wordPartBounds[prevItemPos];
       offset += bounds.width;
-      if (offset > chosenItemsWidth) {
+      if (offset > wordPartPositionsWidth) {
         // wrap next line
         row += 1;
         offset = bounds.width + WORD_PART_SPACING;
@@ -228,7 +198,7 @@ class TranslatorWidget extends Component<Props, State> {
     });
 
     const curItemBounds = this.state.wordPartBounds[itemPos];
-    if (offset + curItemBounds.width > chosenItemsWidth) {
+    if (offset + curItemBounds.width > wordPartPositionsWidth) {
       row += 1;
       offset = 0;
     }
@@ -240,7 +210,7 @@ class TranslatorWidget extends Component<Props, State> {
 
     return {
       x: WIDGET_PADDING + offset + dragDelta.xDelta,
-      y: 2 * WIDGET_PADDING + row * LINE_HEIGHT + (this.isChosen(itemPos) ? 0 : chosenItemsHeight) + dragDelta.yDelta,
+      y: WIDGET_PADDING + row * LINE_HEIGHT + dragDelta.yDelta,
     }
   }
 
@@ -254,24 +224,21 @@ class TranslatorWidget extends Component<Props, State> {
 
   render() {
     return (
-      <div className="TranslatorWidget">
-        <div className="TranslatorWidget-prompt">{this.props.config.prompt}</div>
-        <div className="TranslatorWidget-response">
+      <div className="WordOrderWidget">
+        <div className="WordOrderWidget-response">
           <MeasurableDiv
-            className="TranslatorWidget-chosenItems"
+            className="WordOrderWidget-wordPartPositions"
             style={{height: CHOSEN_ITEMS_HEIGHT}}
-            onUpdateBounds={bounds => this.setState({chosenItemsBounds: bounds})}
+            onUpdateBounds={bounds => this.setState({containerBounds: bounds})}
           >
-              <div className="TranslatorWidget-line"></div>
-              <div className="TranslatorWidget-line"></div>
+              <div className="WordOrderWidget-line"></div>
+              <div className="WordOrderWidget-line"></div>
           </MeasurableDiv>
-          <div className="TranslatorWidget-wordBank" />
-          {this.state.wordBankPositions.map(itemPos => (
+          {this.state.wordPartPositions.map(itemPos => (
             <DraggableDiv
-              className={classNames('TranslatorWidget-wordPart', {'is-dragging': this.state.draggingItem === itemPos})}
+              className={classNames('WordOrderWidget-wordPart', {'is-dragging': this.state.draggingItem === itemPos})}
               key={itemPos}
               style={this.getWordPartStyle(itemPos)}
-              onClick={() => this.onClickWordPart(itemPos)}
               onBeginDrag={(posDelta) => this.onBeginDragWord(itemPos, posDelta)}
               onContinueDrag={(posDelta) => this.onContinueDragWord(posDelta)}
               onEndDrag={(posDelta) => this.onEndDragWord(posDelta)}
@@ -283,10 +250,10 @@ class TranslatorWidget extends Component<Props, State> {
             </DraggableDiv>
           ))}
         </div>
-        <div className="TranslatorWidget-checkResponse">
+        <div className="WordOrderWidget-checkResponse">
           <button
-            className="TranslatorWidget-checkResponseButton"
-            disabled={this.state.chosenItems.length === 0}
+            className="WordOrderWidget-checkResponseButton"
+            disabled={this.state.wordPartPositions.length === 0}
             onClick={this.onCheckResponse}
           >
             Check answer
@@ -297,4 +264,4 @@ class TranslatorWidget extends Component<Props, State> {
   }
 }
 
-export default TranslatorWidget;
+export default WordOrderWidget;

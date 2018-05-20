@@ -1,7 +1,8 @@
 /* @flow */
 
 import React, { Component } from 'react';
-import TranslatorWidget from './components/TranslatorWidget';
+// import TranslatorWidget from './components/TranslatorWidget';
+import WordOrderWidget from './components/WordOrderWidget';
 import './App.css';
 
 class App extends Component<null> {
@@ -9,11 +10,10 @@ class App extends Component<null> {
     return (
       <div className="App">
         <div className="App-widget">
-          <TranslatorWidget
+          <WordOrderWidget
             config={{
-              prompt: 'How are you?',
               correctAnswers: ['你好吗？'],
-              scrambledParts: ['你', '好', '吗', '？', '他', '我'],
+              scrambledParts: ['你', '好', '吗', '？'],
             }}
             onCorrect={() => alert('Correct! :D')}
             onMistake={() => alert('Wrong. :X')}
