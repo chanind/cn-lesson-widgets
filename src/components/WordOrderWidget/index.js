@@ -87,7 +87,7 @@ class WordOrderWidget extends Component<Props, State> {
     this.setState({ draggingItemPosDelta: posDelta });
   }
 
-  onEndDragWord = (posDelta: positionDelta) => {
+  onEndDragWord = () => {
     const { containerBounds, draggingItem } = this.state;
     if (draggingItem == null || !containerBounds) return;
     let isDroppedOnChosenArea = false;
@@ -240,7 +240,7 @@ class WordOrderWidget extends Component<Props, State> {
               style={this.getWordPartStyle(itemPos)}
               onBeginDrag={(posDelta) => this.onBeginDragWord(itemPos, posDelta)}
               onContinueDrag={(posDelta) => this.onContinueDragWord(posDelta)}
-              onEndDrag={(posDelta) => this.onEndDragWord(posDelta)}
+              onEndDrag={this.onEndDragWord}
             >
               <WordPart
                 text={this.props.config.scrambledParts[itemPos]}

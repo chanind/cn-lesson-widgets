@@ -101,7 +101,7 @@ class TranslatorWidget extends Component<Props, State> {
     this.setState({ draggingItemPosDelta: posDelta });
   }
 
-  onEndDragWord = (posDelta: positionDelta) => {
+  onEndDragWord = () => {
     const { chosenItemsBounds, draggingItem } = this.state;
     if (draggingItem == null || !chosenItemsBounds) return;
     let isDroppedOnChosenArea = false;
@@ -166,7 +166,6 @@ class TranslatorWidget extends Component<Props, State> {
   }
 
   isDraggedItemOnChosenItemNum(chosenItemNum: number) {
-    console.log(`is dragged on ${chosenItemNum}?`);
     const draggingItem = this.state.draggingItem;
     if (draggingItem == null) return false;
     const chosenItemAtPos = removeArrayItem(this.state.chosenItems, draggingItem)[chosenItemNum];
@@ -274,7 +273,7 @@ class TranslatorWidget extends Component<Props, State> {
               onClick={() => this.onClickWordPart(itemPos)}
               onBeginDrag={(posDelta) => this.onBeginDragWord(itemPos, posDelta)}
               onContinueDrag={(posDelta) => this.onContinueDragWord(posDelta)}
-              onEndDrag={(posDelta) => this.onEndDragWord(posDelta)}
+              onEndDrag={this.onEndDragWord}
             >
               <WordPart
                 text={this.props.config.scrambledParts[itemPos]}

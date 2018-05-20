@@ -16,8 +16,8 @@ type position = {
 type Props = {
   onBeginDrag?: (positionDelta) => void,
   onContinueDrag?: (positionDelta) => void,
-  onEndDrag?: (positionDelta) => void,
-  onClick?: (SyntheticMouseEvent<HTMLDivElement>) => void,
+  onEndDrag?: () => void,
+  onClick?: () => void,
   children?: Node,
 };
 
@@ -26,12 +26,26 @@ type State = {
   dragStartPos: ?position,
 };
 
-// If a click is triggered and the element was dragged less than this dist, allow the click to go through
-const DRAG_DIST_CLICK_THRESH = 5;
 const DRAG_TIME_THRESH = 300;
+
+const extractMouseEvtPos = (handler: (clientX: number, clientY: number) => void, preventDefault = false) => {
+  return (evt: SyntheticMouseEvent<HTMLDivElement>) => {
+    if (preventDefault) evt.preventDefault();
+    handler(evt.clientX, evt.clientY);
+  }
+};
+
+const extractTouchEvtPos = (handler: (clientX: number, clientY: number) => void, preventDefault = false) => {
+  return (evt: SyntheticTouchEvent<HTMLDivElement>) => {
+    if (preventDefault) evt.preventDefault();
+    handler(evt.touches[0].clientX, evt.touches[0].clientY);
+  }
+};
 
 
 class DraggableDiv extends Component<Props, State> {
+
+  elm = React.createRef();
 
   state = {
     dragStartTime: null,
@@ -43,44 +57,39 @@ class DraggableDiv extends Component<Props, State> {
     yDelta: curY - ((this.state.dragStartPos && this.state.dragStartPos.y) || 0),
   });
 
-  onMouseDown = (evt: SyntheticMouseEvent<HTMLDivElement>) => {
-    evt.preventDefault();
+  onDragDown = (clientX: number, clientY: number) => {
     this.setState({
       dragStartTime: global.performance.now(),
       dragStartPos: {
-        x: evt.clientX,
-        y: evt.clientY,
+        x: clientX,
+        y: clientY,
       },
     });
     this.removeGlobalListeners();
     global.document.body.addEventListener('mousemove', this.onMouseMove);
-    global.document.body.addEventListener('mouseup', this.onMouseUp);
+    global.document.body.addEventListener('touchmove', this.onTouchMove);
+    global.document.body.addEventListener('mouseup', this.onDragEnd);
+    global.document.body.addEventListener('touchend', this.onDragEnd);
     if (this.props.onBeginDrag) this.props.onBeginDrag.call(null, {xDelta: 0, yDelta: 0});
   };
 
-  onMouseMove = (evt: SyntheticMouseEvent<HTMLDivElement>) => {
+  onDragMove = (clientX: number, clientY: number) => {
     if (!this.isDragging()) return;
-    evt.preventDefault();
     if (this.props.onContinueDrag) {
-      this.props.onContinueDrag.call(null, this.getPositionDelta(evt.clientX, evt.clientY));
+      this.props.onContinueDrag.call(null, this.getPositionDelta(clientX, clientY));
     }
   };
 
-  onMouseUp = (evt: SyntheticMouseEvent<HTMLDivElement>) => {
+  onDragEnd = (evt: SyntheticEvent<HTMLDivElement>) => {
+    evt.preventDefault();
     this.removeGlobalListeners();
     if (!this.isDragging()) return;
-    evt.preventDefault();
-    const posDelta = this.getPositionDelta(evt.clientX, evt.clientY);
     if (this.props.onEndDrag) {
-      this.props.onEndDrag.call(null, posDelta);
+      this.props.onEndDrag.call(null);
     }
     const dragTimeDelta = global.performance.now() - (this.state.dragStartTime || 0);
-    if (
-      posDelta.xDelta < DRAG_DIST_CLICK_THRESH &&
-      posDelta.yDelta < DRAG_DIST_CLICK_THRESH &&
-      dragTimeDelta < DRAG_TIME_THRESH
-    ) {
-      this.props.onClick && this.props.onClick(evt);
+    if (dragTimeDelta < DRAG_TIME_THRESH) {
+      this.props.onClick && this.props.onClick();
     }
     this.setState({
       dragStartTime: null,
@@ -88,21 +97,37 @@ class DraggableDiv extends Component<Props, State> {
     });
   };
 
+  onMouseDown = extractMouseEvtPos(this.onDragDown, true)
+  onTouchStart = extractTouchEvtPos(this.onDragDown, true)
+  onMouseMove = extractMouseEvtPos(this.onDragMove);
+  onTouchMove = extractTouchEvtPos(this.onDragMove);
+
   isDragging() {
     return this.state.dragStartTime !== null;
   }
 
   removeGlobalListeners() {
     global.document.body.removeEventListener('mousemove', this.onMouseMove);
-    global.document.body.removeEventListener('mouseup', this.onMouseUp);
+    global.document.body.removeEventListener('touchmove', this.onTouchMove);
+    global.document.body.removeEventListener('mouseup', this.onDragEnd);
+    global.document.body.removeEventListener('touchend', this.onDragEnd);
+  }
+
+  componentDidMount() {
+    // need to attach touchstart here because of https://github.com/facebook/react/issues/8968
+    if (this.elm.current) {
+      this.elm.current.addEventListener('touchstart', this.onTouchStart, {passive: false});
+    }
   }
 
   render() {
     const { children, onBeginDrag, onContinueDrag, onEndDrag, onClick, ...otherProps } = this.props;
     return (
       <div
+        ref={this.elm}
         onMouseDown={this.onMouseDown}
         onMouseUp={evt => this.isDragging() ? evt.stopPropagation() : null}
+        onTouchEnd={evt => this.isDragging() ? evt.stopPropagation() : null}
         {...otherProps}
       >
         {children}
