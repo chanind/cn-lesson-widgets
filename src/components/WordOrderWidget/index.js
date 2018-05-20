@@ -179,7 +179,6 @@ class WordOrderWidget extends Component<Props, State> {
     if (!this.boundsHaveLoaded()) return {x: 0, y: 0};
 
     // this check is just for flow, otherwise it's always going to be set due to the check above.
-    const wordPartPositionsHeight = (this.state.containerBounds && this.state.containerBounds.height) || 0;
     const wordPartPositionsWidth = (this.state.containerBounds && this.state.containerBounds.width) || 0;
 
     const previousItems = this.getPreviousItems(itemPos, ignorePhantomItem);

@@ -1,7 +1,7 @@
 /* @flow */
 
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route } from "react-router-dom";
 
 import TranslatorWidgetDemo from './demo/TranslatorWidgetDemo';
 import WordOrderWidgetDemo from './demo/WordOrderWidgetDemo';
