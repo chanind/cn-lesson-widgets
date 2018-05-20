@@ -19,7 +19,7 @@
 
 .TranslatorWidget-wordBank {
   height: 50%;
-  min-height: 200px;
+  min-height: 100px;
 }
 
 .TranslatorWidget-wordPart {
